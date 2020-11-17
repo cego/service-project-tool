@@ -1,0 +1,2 @@
+# CronTab for running laravels scheduler
+* * * * * php /project/artisan schedule:run >> /var/log/cron.log

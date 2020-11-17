@@ -1,0 +1,330 @@
+stages:
+  - setup
+  - qa
+  - build
+  - tag
+  - databases
+  - migrations
+  - seeders
+  - deployment
+
+default:
+  tags:
+    - shared-docker
+
+variables:
+  DOCKER_TAG: ci-pipeline-${CI_PIPELINE_ID}
+  PROJECT_NAMESPACE: cego
+  PROJECT_NAME: marketing-automation
+  DOCKER_BUILDKIT: 1
+
+
+# Extendable helpers
+.stage-tags:
+  tags:
+    - stack-deployer
+    - spilnu
+    - stage
+  variables:
+    APP_ENV: stage
+
+.production-tags:
+  tags:
+    - stack-deployer
+    - spilnu
+    - prod
+  variables:
+    APP_ENV: production
+
+.spilnu:
+  variables:
+    APP_SITE: spilnu
+
+.lyckost:
+  variables:
+    APP_SITE: lyckost
+
+.deploy-base:
+  stage: deployment
+  only:
+    - tags
+  when: manual
+
+.deploy-stage:
+  extends:
+    - .deploy-base
+    - .stage-tags
+
+.deploy-production:
+  extends:
+    - .deploy-base
+    - .production-tags
+
+.qa:
+  stage: qa
+  except:
+    - tags
+
+.build:
+  stage: build
+  except:
+    - tags
+
+.database-base:
+  stage: databases
+  only:
+    - tags
+  when: manual
+
+.database-stage:
+  extends:
+    - .database-base
+    - .stage-tags
+
+.database-production:
+  extends:
+    - .database-base
+    - .production-tags
+
+.migrate-base:
+  stage: migrations
+  only:
+    - tags
+  when: manual
+
+.migrate-stage:
+  extends:
+    - .migrate-base
+    - .stage-tags
+
+.migrate-production:
+  extends:
+    - .migrate-base
+    - .production-tags
+
+.seed-base:
+  stage: seeders
+  only:
+    - tags
+  when: manual
+
+.seed-stage:
+  extends:
+    - .seed-base
+    - .stage-tags
+
+.seed-production:
+  extends:
+    - .seed-base
+    - .production-tags
+
+
+# Setup Stage
+dependencies:
+  stage: setup
+  script:
+    - docker build --target dependencies -f docker/Dockerfile .
+
+
+# Quality Assurance Stage
+phpunit:
+  extends: .qa
+  script:
+    - docker build --target phpunit -f docker/Dockerfile .
+
+php-cs-fixer:
+  extends: .qa
+  script:
+    - docker build --target phpcsfixer -f docker/Dockerfile .
+
+phpstan:
+  extends: .qa
+  script:
+    - docker build --target phpstan -f docker/Dockerfile .
+
+
+# Build Stage
+api:
+  extends: .build
+  script:
+    - docker build --target api -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:${DOCKER_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:${DOCKER_TAG}
+
+cron:
+  extends: .build
+  script:
+    - docker build --target cron -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:${DOCKER_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:${DOCKER_TAG}
+
+migrator:
+  extends: .build
+  script:
+    - docker build --target migrator -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${DOCKER_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${DOCKER_TAG}
+
+seeder:
+  extends: .build
+  script:
+    - docker build --target seeder -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${DOCKER_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${DOCKER_TAG}
+
+shell:
+  extends: .build
+  script:
+    - docker build --target shell -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:${DOCKER_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:${DOCKER_TAG}
+
+
+
+# Tagging Stage
+latest:
+  stage: tag
+  only:
+    - master
+  script:
+    - docker build --target api -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:latest -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:latest
+
+    - docker build --target cron -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:latest -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:latest
+
+    - docker build --target migrator -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:latest -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:latest
+
+    - docker build --target seeder -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:latest -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:latest
+
+    - docker build --target shell -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:latest -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:latest
+
+release:
+  stage: tag
+  only:
+    - tags
+  script:
+    - docker build --target api -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:${CI_COMMIT_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/api:${CI_COMMIT_TAG}
+
+    - docker build --target cron -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:${CI_COMMIT_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:${CI_COMMIT_TAG}
+
+    - docker build --target migrator -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG}
+
+    - docker build --target seeder -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG}
+
+    - docker build --target shell -t registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:${CI_COMMIT_TAG} -f docker/Dockerfile .
+    - docker push registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/shell:${CI_COMMIT_TAG}
+
+
+# Database Stage
+spilnu-create-database-stage:
+  extends: .database-stage
+  script:
+    - docker run -i --rm --network sn_default mariadb:latest mysql -h mysql01-primary -uroot -p${SPILNU_STAGE_MYSQL_ROOT_PASSWORD} < docker/setup-database.sql
+
+spilnu-create-database-production:
+  extends: .database-production
+  script:
+    - docker run -i --rm --network sn_default mariadb:latest mysql -h mysql01-primary -uroot -p${SPILNU_PRODUCTION_MYSQL_ROOT_PASSWORD} < docker/setup-database.sql
+
+lyckost-create-database-stage:
+  extends: .database-stage
+  script:
+    - docker run -i --rm --network lo_default mariadb:latest mysql -h mysql01-primary -uroot -p${LYCKOST_STAGE_MYSQL_ROOT_PASSWORD} < docker/setup-database.sql
+
+lyckost-create-database-production:
+  extends: .database-production
+  script:
+    - docker run -i --rm --network lo_default mariadb:latest mysql -h mysql01-primary -uroot -p${LYCKOST_PRODUCTION_MYSQL_ROOT_PASSWORD} < docker/setup-database.sql
+
+
+# Migration Stage
+spilnu-migrator-stage:
+  extends:
+    - .migrate-stage
+  variables:
+    APP_ENV: spilnu-stage
+    DB_HOST: sn_mysql_mysql01-primary
+  script:
+    - docker run -e APP_ENV -e DB_HOST --network sn_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG}
+
+spilnu-migrator-production:
+  extends:
+    - .migrate-production
+  variables:
+    APP_ENV: spilnu-production
+    DB_HOST: sn_mysql_mysql01-primary
+  script:
+    - docker run -e APP_ENV -e DB_HOST --network sn_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG}
+
+lyckost-migrator-stage:
+  extends:
+    - .migrate-stage
+  variables:
+    APP_ENV: lyckost-stage
+    DB_HOST: lo_mysql_mysql01-primary
+  script:
+    - docker run -e APP_ENV -e DB_HOST --network lo_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG}
+
+lyckost-migrator-production:
+  extends:
+    - .migrate-production
+  variables:
+    APP_ENV: lyckost-production
+    DB_HOST: lo_mysql_mysql01-primary
+  script:
+    - docker run -e APP_ENV -e DB_HOST --network lo_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/migrator:${CI_COMMIT_TAG}
+
+
+# Seeding Stage
+spilnu-seeder-stage:
+  extends:
+    - .seed-stage
+    - .spilnu
+  script:
+    - docker run -e APP_ENV -e APP_SITE -e DB_HOST --network sn_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG}
+
+spilnu-seeder-production:
+  extends:
+    - .seed-production
+    - .spilnu
+  script:
+    - docker run -e APP_ENV -e APP_SITE -e DB_HOST --network sn_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG}
+
+lyckost-seeder-stage:
+  extends:
+    - .seed-stage
+    - .lyckost
+  script:
+    - docker run -e APP_ENV -e APP_SITE -e DB_HOST --network lo_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG}
+
+lyckost-seeder-production:
+  extends:
+    - .seed-production
+    - .lyckost
+  script:
+    - docker run -e APP_ENV -e APP_SITE -e DB_HOST --network lo_default --rm registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/seeder:${CI_COMMIT_TAG}
+
+
+# Deployment Stage
+spilnu-stage:
+  extends: .deploy-stage
+  script:
+    - docker stack deploy --with-registry-auth --compose-file docker-compose.base.stage.yml -c docker-compose.spilnu.stage.yml spilnu-${PROJECT_NAME}
+
+spilnu-production:
+  extends: .deploy-production
+  script:
+    - docker stack deploy --with-registry-auth --compose-file docker-compose.base.production.yml -c docker-compose.spilnu.production.yml spilnu-${PROJECT_NAME}
+
+lyckost-stage:
+  extends: .deploy-stage
+  script:
+    - docker stack deploy --with-registry-auth --compose-file docker-compose.base.stage.yml -c docker-compose.lyckost.stage.yml lyckost-${PROJECT_NAME}
+
+lyckost-production:
+  extends: .deploy-production
+  script:
+    - docker stack deploy --with-registry-auth --compose-file docker-compose.base.production.yml -c docker-compose.lyckost.production.yml lyckost-${PROJECT_NAME}

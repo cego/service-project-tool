@@ -1,0 +1,17 @@
+  ${SERVICE_NAME}:
+    image: registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/${SERVICE_NAME}:${CI_COMMIT_TAG}
+    labels:
+      co.elastic.logs/enabled: false
+    environment:
+      LOGSPOUT: ignore
+      APP_ENV: ${ENVIRONMENT}
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.purpose==generic
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

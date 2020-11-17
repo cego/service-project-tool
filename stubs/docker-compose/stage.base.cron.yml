@@ -1,0 +1,14 @@
+  cron:
+    image: registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron:${CI_COMMIT_TAG}
+    labels:
+      co.elastic.logs/enabled: false
+    environment:
+      LOGSPOUT: ignore
+      APP_ENV: ${ENVIRONMENT}
+    deploy:
+      replicas: 1
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

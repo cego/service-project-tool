@@ -1,0 +1,10 @@
+  redis:
+    image: redis:5.0.8
+    networks:
+      - ${PROJECT_NAME}
+    command:
+      - 'redis-server'
+      - '--maxmemory 800mb'
+      - '--maxmemory-policy allkeys-lfu'
+    ports:
+      - "6379:6379"

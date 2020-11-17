@@ -1,0 +1,6 @@
+  cloudflared:
+    networks:
+      - ${SERVICE_NETWORK}
+    environment:
+      TUNNEL_HOSTNAME: ${SERVICE_HOST}
+      TUNNEL_CERTIFICATE_CONTENT: ${${SERVICE_SITE}_TUNNEL_CERTIFICATE_CONTENT}

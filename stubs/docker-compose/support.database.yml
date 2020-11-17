@@ -1,0 +1,9 @@
+  database:
+    image: mariadb:10.5.2
+    networks:
+      - ${PROJECT_NAME}
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: ${PROJECT_NAME}
+    ports:
+      - "3306:3306"

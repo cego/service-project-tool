@@ -1,0 +1,14 @@
+  redis:
+    image: redis:5.0.8
+    labels:
+      co.elastic.logs/enabled: false
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.purpose==generic
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

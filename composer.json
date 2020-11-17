@@ -1,0 +1,25 @@
+{
+    "name": "cego/service-project-tool",
+    "description": "Tool for maintaining and scaffolding service projects",
+    "type": "project",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "license": "MIT",
+    "require": {
+        "symfony/console": "^5.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*",
+        "friendsofphp/php-cs-fixer": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cego\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    }
+}

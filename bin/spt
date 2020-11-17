@@ -1,0 +1,43 @@
+#!/usr/bin/env php
+<?php
+
+use Cego\Commands;
+use Symfony\Component\Console\Application;
+
+// Define needed paths
+define('ROOT_PATH', dirname(__DIR__));
+define('VENDOR_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'vendor');
+define('STUBS_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'stubs');
+define('UPDATES_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'updates');
+
+// Ensure we load the autoload.php composer has put in place
+require VENDOR_PATH . DIRECTORY_SEPARATOR . 'autoload.php';
+
+// Set the version
+$version = '0.0.1';
+
+// Create a cool looking logo
+$logo = "  ██████ ▓█████  ██▀███   ██▒   █▓ ██▓ ▄████▄  ▓█████   ██████ 
+▒██    ▒ ▓█   ▀ ▓██ ▒ ██▒▓██░   █▒▓██▒▒██▀ ▀█  ▓█   ▀ ▒██    ▒ 
+░ ▓██▄   ▒███   ▓██ ░▄█ ▒ ▓██  █▒░▒██▒▒▓█    ▄ ▒███   ░ ▓██▄   
+  ▒   ██▒▒▓█  ▄ ▒██▀▀█▄    ▒██ █░░░██░▒▓▓▄ ▄██▒▒▓█  ▄   ▒   ██▒
+▒██████▒▒░▒████▒░██▓ ▒██▒   ▒▀█░  ░██░▒ ▓███▀ ░░▒████▒▒██████▒▒
+▒ ▒▓▒ ▒ ░░░ ▒░ ░░ ▒▓ ░▒▓░   ░ ▐░  ░▓  ░ ░▒ ▒  ░░░ ▒░ ░▒ ▒▓▒ ▒ ░
+░ ░▒  ░ ░ ░ ░  ░  ░▒ ░ ▒░   ░ ░░   ▒ ░  ░  ▒    ░ ░  ░░ ░▒  ░ ░
+░  ░  ░     ░     ░░   ░      ░░   ▒ ░░           ░   ░  ░  ░  
+      ░     ░  ░   ░           ░   ░  ░ ░         ░  ░      ░  
+                              ░       ░   <comment>version</comment>";
+
+// Setup the application
+$application = new Application();
+$application->setName($logo);
+$application->setVersion($version);
+
+// Register available commands
+$application->addCommands([
+    new Commands\NewProject,
+    new Commands\UpdateProject
+]);
+
+// Run application
+$application->run();

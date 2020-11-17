@@ -1,0 +1,13 @@
+  cloudflared:
+    restart: always
+    image: registry.cego.dk/cego/cloudflared:2020.8.0-1cego
+    labels:
+      co.elastic.logs/enabled: false
+    environment:
+      TUNNEL_URL: http://${SERVICE_NAME}
+      AUTH_FORWARD_URL: https://sso.cego.dk/auth
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.purpose==generic

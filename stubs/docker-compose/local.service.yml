@@ -1,0 +1,10 @@
+  ${SERVICE_NAME}:
+    image: registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/${SERVICE_NAME}
+    environment:
+      APP_ENV: local
+    networks:
+      - ${PROJECT_NAME}
+    ports:
+      - "80:80"
+    volumes:
+      - ./project:/project

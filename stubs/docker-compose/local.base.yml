@@ -1,0 +1,9 @@
+---
+
+version: "3.4"
+
+networks:
+  ${PROJECT_NAME}:
+    external: true
+
+services:

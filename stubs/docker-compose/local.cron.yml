@@ -1,0 +1,6 @@
+  cron:
+    image: registry.cego.dk/${PROJECT_NAMESPACE}/${PROJECT_NAME}/cron
+    environment:
+      APP_ENV: local
+    networks:
+      - ${PROJECT_NAME}
